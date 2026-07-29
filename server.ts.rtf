@@ -1,0 +1,369 @@
+{\rtf1\ansi\ansicpg1251\cocoartf2870
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 Menlo-Regular;}
+{\colortbl;\red255\green255\blue255;\red15\green112\blue1;\red255\green255\blue254;\red0\green0\blue0;
+\red0\green0\blue255;\red144\green1\blue18;\red14\green110\blue109;\red19\green118\blue70;\red107\green0\blue1;
+}
+{\*\expandedcolortbl;;\cssrgb\c0\c50196\c0;\cssrgb\c100000\c100000\c99608;\cssrgb\c0\c0\c0;
+\cssrgb\c0\c0\c100000;\cssrgb\c63922\c8235\c8235;\cssrgb\c0\c50196\c50196;\cssrgb\c3529\c52549\c34510;\cssrgb\c50196\c0\c0;
+}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs24 \cf2 \cb3 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 /**\cf0 \cb1 \strokec4 \
+\cf2 \cb3 \strokec2  * @license\cf0 \cb1 \strokec4 \
+\cf2 \cb3 \strokec2  * SPDX-License-Identifier: Apache-2.0\cf0 \cb1 \strokec4 \
+\cf2 \cb3 \strokec2  */\cf0 \cb1 \strokec4 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf5 \cb3 \strokec5 import\cf0 \strokec4  express \cf5 \strokec5 from\cf0 \strokec4  \cf6 \strokec6 'express'\cf0 \strokec4 ;\cb1 \
+\cf5 \cb3 \strokec5 import\cf0 \strokec4  path \cf5 \strokec5 from\cf0 \strokec4  \cf6 \strokec6 'path'\cf0 \strokec4 ;\cb1 \
+\cf5 \cb3 \strokec5 import\cf0 \strokec4  \{ fileURLToPath \} \cf5 \strokec5 from\cf0 \strokec4  \cf6 \strokec6 'url'\cf0 \strokec4 ;\cb1 \
+\cf5 \cb3 \strokec5 import\cf0 \strokec4  fs \cf5 \strokec5 from\cf0 \strokec4  \cf6 \strokec6 'fs/promises'\cf0 \strokec4 ;\cb1 \
+\cf5 \cb3 \strokec5 import\cf0 \strokec4  dotenv \cf5 \strokec5 from\cf0 \strokec4  \cf6 \strokec6 'dotenv'\cf0 \strokec4 ;\cb1 \
+\cf5 \cb3 \strokec5 import\cf0 \strokec4  \{ \cf7 \strokec7 GoogleGenAI\cf0 \strokec4 , \cf7 \strokec7 Type\cf0 \strokec4  \} \cf5 \strokec5 from\cf0 \strokec4  \cf6 \strokec6 '@google/genai'\cf0 \strokec4 ;\cb1 \
+\cf5 \cb3 \strokec5 import\cf0 \strokec4  \{ \cf7 \strokec7 Agent\cf0 \strokec4 , \cf7 \strokec7 ClientPoint\cf0 \strokec4 , \cf7 \strokec7 ReferenceScriptStep\cf0 \strokec4 , \cf7 \strokec7 AuditReport\cf0 \strokec4 , \cf7 \strokec7 KnowledgeDocument\cf0 \strokec4  \} \cf5 \strokec5 from\cf0 \strokec4  \cf6 \strokec6 './src/types.js'\cf0 \strokec4 ;\cb1 \
+\
+\cf5 \cb3 \strokec5 const\cf0 \strokec4  workspaceRoot = process.cwd();\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf0 \cb3 dotenv.config();\cb1 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf5 \cb3 \strokec5 const\cf0 \strokec4  app = express();\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf0 \cb3 app.use(express.json(\{ limit: \cf6 \strokec6 '50mb'\cf0 \strokec4  \}));\cb1 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf5 \cb3 \strokec5 const\cf0 \strokec4  \cf7 \strokec7 PORT\cf0 \strokec4  = process.env.\cf7 \strokec7 PORT\cf0 \strokec4  || \cf8 \strokec8 3000\cf0 \strokec4 ;\cb1 \
+\
+\cf5 \cb3 \strokec5 let\cf0 \strokec4  agents: \cf7 \strokec7 Agent\cf0 \strokec4 [] = [\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf0 \cb3   \{ id: \cf6 \strokec6 'agent_1'\cf0 \strokec4 , name: \cf6 \strokec6 '\uc0\u1046 \u1091 \u1088 \u1072 \u1074 \u1077 \u1083 \u1100  \u1044 \u1084 \u1080 \u1090 \u1088 \u1086 '\cf0 \strokec4 , email: \cf6 \strokec6 'd.zhuravel@av.ua'\cf0 \strokec4 , phone: \cf6 \strokec6 '+380 (50) 111-22-33'\cf0 \strokec4 , activePoints: \cf8 \strokec8 82\cf0 \strokec4 , photoColor: \cf6 \strokec6 'bg-emerald-650'\cf0 \strokec4  \},\cb1 \
+\cb3   \{ id: \cf6 \strokec6 'agent_2'\cf0 \strokec4 , name: \cf6 \strokec6 '\uc0\u1057 \u1090 \u1086 \u1083 \u1103 \u1088 \u1095 \u1091 \u1082  \u1054 \u1083 \u1077 \u1082 \u1089 \u1072 \u1085 \u1076 \u1088 '\cf0 \strokec4 , email: \cf6 \strokec6 'o.stolyarchuk@av.ua'\cf0 \strokec4 , phone: \cf6 \strokec6 '+380 (67) 222-33-44'\cf0 \strokec4 , activePoints: \cf8 \strokec8 79\cf0 \strokec4 , photoColor: \cf6 \strokec6 'bg-blue-650'\cf0 \strokec4  \},\cb1 \
+\cb3   \{ id: \cf6 \strokec6 'agent_3'\cf0 \strokec4 , name: \cf6 \strokec6 '\uc0\u1052 \u1086 \u1088 \u1089 \u1100 \u1082 \u1080 \u1081  \u1044 \u1084 \u1080 \u1090 \u1088 \u1086 '\cf0 \strokec4 , email: \cf6 \strokec6 'd.morskyi@av.ua'\cf0 \strokec4 , phone: \cf6 \strokec6 '+380 (93) 333-44-55'\cf0 \strokec4 , activePoints: \cf8 \strokec8 80\cf0 \strokec4 , photoColor: \cf6 \strokec6 'bg-purple-650'\cf0 \strokec4  \},\cb1 \
+\cb3   \{ id: \cf6 \strokec6 'agent_4'\cf0 \strokec4 , name: \cf6 \strokec6 '\uc0\u1043 \u1088 \u1072 \u1073 \u1110 \u1081 \u1095 \u1091 \u1082  \u1042 \u1072 \u1083 \u1077 \u1088 \u1110 \u1081 '\cf0 \strokec4 , email: \cf6 \strokec6 'v.hrabiychuk@av.ua'\cf0 \strokec4 , phone: \cf6 \strokec6 '+380 (50) 444-55-66'\cf0 \strokec4 , activePoints: \cf8 \strokec8 85\cf0 \strokec4 , photoColor: \cf6 \strokec6 'bg-amber-655'\cf0 \strokec4  \}\cb1 \
+\cb3 ];\cb1 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf5 \cb3 \strokec5 let\cf0 \strokec4  points: \cf7 \strokec7 ClientPoint\cf0 \strokec4 [] = [\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf0 \cb3   \{ id: \cf6 \strokec6 'point_1'\cf0 \strokec4 , name: \cf6 \strokec6 '\uc0\u1055 \u1088 \u1086 \u1076 \u1091 \u1082 \u1090 \u1086 \u1074 \u1080 \u1081  \u1084 \u1072 \u1088 \u1082 \u1077 \u1090  \'ab\u1043 \u1091 \u1088 \u1084 \u1072 \u1085 \'bb'\cf0 \strokec4 , address: \cf6 \strokec6 '\uc0\u1074 \u1091 \u1083 . \u1061 \u1088 \u1077 \u1097 \u1072 \u1090 \u1080 \u1082 , 15'\cf0 \strokec4 , \cf5 \strokec5 type\cf0 \strokec4 : \cf6 \strokec6 'grocery'\cf0 \strokec4 , contactPerson: \cf6 \strokec6 '\uc0\u1054 \u1082 \u1089 \u1072 \u1085 \u1072  \u1052 \u1080 \u1082 \u1086 \u1083 \u1072 \u1111 \u1074 \u1085 \u1072 '\cf0 \strokec4 , averageMonthlySalesKg: \cf8 \strokec8 32.5\cf0 \strokec4 , overdueReceivables: \cf8 \strokec8 2400\cf0 \strokec4 , lastVisitDate: \cf6 \strokec6 '2026-06-01'\cf0 \strokec4  \},\cb1 \
+\cb3   \{ id: \cf6 \strokec6 'point_2'\cf0 \strokec4 , name: \cf6 \strokec6 '\uc0\u1057 \u1058 \u1054  \'ab\u1055 \u1088 \u1077 \u1084 \u1110 \u1091 \u1084  \u1052 \u1086 \u1090 \u1086 \u1088 \u1089 \'bb'\cf0 \strokec4 , address: \cf6 \strokec6 '\uc0\u1087 \u1088 -\u1090  \u1041 \u1072 \u1085 \u1076 \u1077 \u1088 \u1080 , 21'\cf0 \strokec4 , \cf5 \strokec5 type\cf0 \strokec4 : \cf6 \strokec6 'service_station'\cf0 \strokec4 , contactPerson: \cf6 \strokec6 '\uc0\u1030 \u1075 \u1086 \u1088 '\cf0 \strokec4 , averageMonthlySalesKg: \cf8 \strokec8 18.0\cf0 \strokec4 , overdueReceivables: \cf8 \strokec8 0\cf0 \strokec4 , lastVisitDate: \cf6 \strokec6 '2026-05-28'\cf0 \strokec4  \}\cb1 \
+\cb3 ];\cb1 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf5 \cb3 \strokec5 let\cf0 \strokec4  scriptSteps: \cf7 \strokec7 ReferenceScriptStep\cf0 \strokec4 [] = [\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf0 \cb3   \{ id: \cf6 \strokec6 'step_1'\cf0 \strokec4 , key: \cf6 \strokec6 'tech_water_temp'\cf0 \strokec4 , title: \cf6 \strokec6 '\uc0\u1050 \u1088 \u1080 \u1090 \u1077 \u1088 \u1110 \u1081  1: \u1042 \u1086 \u1076 \u1086 \u1087 \u1110 \u1076 \u1075 \u1086 \u1090 \u1086 \u1074 \u1082 \u1072  \u1090 \u1072  \u1047 \u1072 \u1093 \u1080 \u1089 \u1090  \u1086 \u1073 \u1083 \u1072 \u1076 \u1085 \u1072 \u1085 \u1085 \u1103 '\cf0 \strokec4 , description: \cf6 \strokec6 '\uc0\u1054 \u1073 \u1086 \u1074 \\'\u1103 \u1079 \u1082 \u1086 \u1074 \u1080 \u1081  \u1079 \u1072 \u1084 \u1110 \u1088  \u1074 \u1086 \u1076 \u1080  TDS-\u1084 \u1077 \u1090 \u1088 \u1086 \u1084  (\u1085 \u1086 \u1088 \u1084 \u1072  \u1076 \u1086  180 ppm). \u1030 \u1085 \u1089 \u1090 \u1088 \u1091 \u1082 \u1090 \u1072 \u1078  \u1051 \u1055 \u1056  \u1097 \u1086 \u1076 \u1086  \u1085 \u1077 \u1073 \u1077 \u1079 \u1087 \u1077 \u1082 \u1080  \u1084 \u1086 \u1088 \u1086 \u1079 \u1110 \u1074 .'\cf0 \strokec4 , weight: \cf8 \strokec8 20\cf0 \strokec4 , idealPhrases: [] \},\cb1 \
+\cb3   \{ id: \cf6 \strokec6 'step_2'\cf0 \strokec4 , key: \cf6 \strokec6 'tasting_first_cup'\cf0 \strokec4 , title: \cf6 \strokec6 '\uc0\u1050 \u1088 \u1080 \u1090 \u1077 \u1088 \u1110 \u1081  2: \u1044 \u1077 \u1075 \u1091 \u1089 \u1090 \u1072 \u1094 \u1110 \u1103  \u1090 \u1072  \u1055 \u1088 \u1072 \u1074 \u1080 \u1083 \u1086  \u1087 \u1077 \u1088 \u1096 \u1086 \u1111  \u1095 \u1072 \u1096 \u1082 \u1080 '\cf0 \strokec4 , description: \cf6 \strokec6 '\uc0\u1040 \u1075 \u1077 \u1085 \u1090  \u1084 \u1072 \u1108  \u1087 \u1077 \u1088 \u1096 \u1091  \u1095 \u1072 \u1096 \u1082 \u1091  \u1074 \u1080 \u1087 \u1080 \u1090 \u1080  \u1089 \u1072 \u1084  \u1076 \u1083 \u1103  \u1087 \u1077 \u1088 \u1077 \u1074 \u1110 \u1088 \u1082 \u1080  \u1085 \u1072 \u1083 \u1072 \u1096 \u1090 \u1091 \u1074 \u1072 \u1085 \u1100 . \u1055 \u1088 \u1077 \u1079 \u1077 \u1085 \u1090 \u1072 \u1094 \u1110 \u1103  \u1082 \u1091 \u1087 \u1072 \u1078 \u1091  (9 \u1075 \u1088 \u1072 \u1084  \u1085 \u1072  \u1077 \u1089 \u1087 \u1088 \u1077 \u1089 \u1086 ).'\cf0 \strokec4 , weight: \cf8 \strokec8 15\cf0 \strokec4 , idealPhrases: [] \},\cb1 \
+\cb3   \{ id: \cf6 \strokec6 'step_3'\cf0 \strokec4 , key: \cf6 \strokec6 'finance_no_debt'\cf0 \strokec4 , title: \cf6 \strokec6 '\uc0\u1050 \u1088 \u1080 \u1090 \u1077 \u1088 \u1110 \u1081  3: \u1060 \u1110 \u1085 \u1072 \u1085 \u1089 \u1086 \u1074 \u1072  \u1076 \u1080 \u1089 \u1094 \u1080 \u1087 \u1083 \u1110 \u1085 \u1072  \u1090 \u1072  \u1030 \u1085 \u1075 \u1088 \u1077 \u1076 \u1110 \u1108 \u1085 \u1090 \u1080 '\cf0 \strokec4 , description: \cf6 \strokec6 '\uc0\u1046 \u1086 \u1088 \u1089 \u1090 \u1082 \u1072  \u1092 \u1110 \u1082 \u1089 \u1072 \u1094 \u1110 \u1103  \u1088 \u1086 \u1073 \u1086 \u1090 \u1080  \u1073 \u1077 \u1079  \u1076 \u1077 \u1073 \u1110 \u1090 \u1086 \u1088 \u1082 \u1080  (\u1086 \u1087 \u1083 \u1072 \u1090 \u1072  \u1087 \u1086  \u1092 \u1072 \u1082 \u1090 \u1091 ). \u1047 \u1072 \u1073 \u1086 \u1088 \u1086 \u1085 \u1072  \u1089 \u1090 \u1086 \u1088 \u1086 \u1085 \u1085 \u1110 \u1093  \u1110 \u1085 \u1075 \u1088 \u1077 \u1076 \u1110 \u1108 \u1085 \u1090 \u1110 \u1074 .'\cf0 \strokec4 , weight: \cf8 \strokec8 20\cf0 \strokec4 , idealPhrases: [] \},\cb1 \
+\cb3   \{ id: \cf6 \strokec6 'step_4'\cf0 \strokec4 , key: \cf6 \strokec6 'contract_2_months'\cf0 \strokec4 , title: \cf6 \strokec6 '\uc0\u1050 \u1088 \u1080 \u1090 \u1077 \u1088 \u1110 \u1081  4: \u1059 \u1084 \u1086 \u1074 \u1080  \u1089 \u1091 \u1073 \u1086 \u1088 \u1077 \u1085 \u1076 \u1080  \u1090 \u1072  2-\u1084 \u1110 \u1089 \u1103 \u1095 \u1085 \u1080 \u1081  \u1090 \u1077 \u1089 \u1090 '\cf0 \strokec4 , description: \cf6 \strokec6 '\uc0\u1054 \u1073 \u1086 \u1074 \\'\u1103 \u1079 \u1082 \u1086 \u1074 \u1077  \u1087 \u1086 \u1087 \u1077 \u1088 \u1077 \u1076 \u1078 \u1077 \u1085 \u1085 \u1103  \u1087 \u1088 \u1086  \u1072 \u1091 \u1076 \u1080 \u1090  \u1095 \u1077 \u1088 \u1077 \u1079  8 \u1090 \u1080 \u1078 \u1085 \u1110 \u1074  (\u1086 \u1088 \u1110 \u1108 \u1085 \u1090 \u1080 \u1088  4 \u1082 \u1075 ) \u1090 \u1072  \u1089 \u1094 \u1077 \u1085 \u1072 \u1088 \u1110 \u1111  \u1087 \u1088 \u1080  \u1085 \u1080 \u1079 \u1100 \u1082 \u1086 \u1084 \u1091  \u1087 \u1088 \u1086 \u1083 \u1080 \u1074 \u1110 .'\cf0 \strokec4 , weight: \cf8 \strokec8 20\cf0 \strokec4 , idealPhrases: [] \},\cb1 \
+\cb3   \{ id: \cf6 \strokec6 'step_5'\cf0 \strokec4 , key: \cf6 \strokec6 'objections_handling'\cf0 \strokec4 , title: \cf6 \strokec6 '\uc0\u1050 \u1088 \u1080 \u1090 \u1077 \u1088 \u1110 \u1081  5: \u1056 \u1086 \u1073 \u1086 \u1090 \u1072  \u1110 \u1079  \u1079 \u1072 \u1087 \u1077 \u1088 \u1077 \u1095 \u1077 \u1085 \u1085 \u1103 \u1084 \u1080  \u1051 \u1055 \u1056 '\cf0 \strokec4 , description: \cf6 \strokec6 '\uc0\u1047 \u1075 \u1086 \u1076 \u1072  \u1079  \u1082 \u1083 \u1110 \u1108 \u1085 \u1090 \u1086 \u1084  \u1090 \u1072  \u1087 \u1077 \u1088 \u1077 \u1074 \u1077 \u1076 \u1077 \u1085 \u1085 \u1103  \u1092 \u1086 \u1082 \u1091 \u1089 \u1091  \u1085 \u1072  \u1087 \u1086 \u1082 \u1091 \u1087 \u1094 \u1103 . \u1055 \u1088 \u1086 \u1087 \u1086 \u1079 \u1080 \u1094 \u1110 \u1103  \u1090 \u1077 \u1089 \u1090 -\u1076 \u1088 \u1072 \u1081 \u1074 \u1091 .'\cf0 \strokec4 , weight: \cf8 \strokec8 15\cf0 \strokec4 , idealPhrases: [] \},\cb1 \
+\cb3   \{ id: \cf6 \strokec6 'step_6'\cf0 \strokec4 , key: \cf6 \strokec6 'upsell_give_to_hand'\cf0 \strokec4 , title: \cf6 \strokec6 '\uc0\u1050 \u1088 \u1080 \u1090 \u1077 \u1088 \u1110 \u1081  6: \u1044 \u1086 \u1076 \u1072 \u1090 \u1082 \u1086 \u1074 \u1110  \u1087 \u1088 \u1086 \u1076 \u1072 \u1078 \u1110  (Give to hand)'\cf0 \strokec4 , description: \cf6 \strokec6 '\uc0\u1040 \u1082 \u1090 \u1080 \u1074 \u1085 \u1072  \u1087 \u1088 \u1086 \u1087 \u1086 \u1079 \u1080 \u1094 \u1110 \u1103  \u1082 \u1072 \u1074 \u1080  \u1074  \u1087 \u1072 \u1095 \u1082 \u1072 \u1093  (120 \u1075 \u1088 \u1085 ) \u1090 \u1072  \u1095 \u1072 \u1102  (75 \u1075 \u1088 \u1085 ). \u1055 \u1077 \u1088 \u1077 \u1076 \u1072 \u1095 \u1072  \u1090 \u1086 \u1074 \u1072 \u1088 \u1091  \u1074  \u1088 \u1091 \u1082 \u1080 .'\cf0 \strokec4 , weight: \cf8 \strokec8 10\cf0 \strokec4 , idealPhrases: [] \}\cb1 \
+\cb3 ];\cb1 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf5 \cb3 \strokec5 const\cf0 \strokec4  \cf7 \strokec7 DB_FILE\cf0 \strokec4  = path.resolve(workspaceRoot, \cf6 \strokec6 'db-store.json'\cf0 \strokec4 );\cb1 \
+\cf5 \cb3 \strokec5 let\cf0 \strokec4  documents: \cf7 \strokec7 KnowledgeDocument\cf0 \strokec4 [] = [];\cb1 \
+\cf5 \cb3 \strokec5 let\cf0 \strokec4  audits: \cf7 \strokec7 AuditReport\cf0 \strokec4 [] = [];\cb1 \
+\
+\cf5 \cb3 \strokec5 async\cf0 \strokec4  \cf5 \strokec5 function\cf0 \strokec4  saveToDisk() \{\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf0 \cb3   \cf5 \strokec5 try\cf0 \strokec4  \{\cb1 \
+\cb3     \cf5 \strokec5 const\cf0 \strokec4  payload = \{ agents, points, scriptSteps, audits, documents \};\cb1 \
+\cb3     \cf5 \strokec5 await\cf0 \strokec4  fs.writeFile(\cf7 \strokec7 DB_FILE\cf0 \strokec4 , \cf7 \strokec7 JSON\cf0 \strokec4 .stringify(payload, \cf5 \strokec5 null\cf0 \strokec4 , \cf8 \strokec8 2\cf0 \strokec4 ), \cf6 \strokec6 'utf-8'\cf0 \strokec4 );\cb1 \
+\cb3   \} \cf5 \strokec5 catch\cf0 \strokec4  (error) \{\cb1 \
+\cb3     console.error(\cf6 \strokec6 'Error writing database to disk:'\cf0 \strokec4 , error);\cb1 \
+\cb3   \}\cb1 \
+\cb3 \}\cb1 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf5 \cb3 \strokec5 async\cf0 \strokec4  \cf5 \strokec5 function\cf0 \strokec4  loadFromDisk() \{\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf0 \cb3   \cf5 \strokec5 try\cf0 \strokec4  \{\cb1 \
+\cb3     \cf5 \strokec5 const\cf0 \strokec4  data = \cf5 \strokec5 await\cf0 \strokec4  fs.readFile(\cf7 \strokec7 DB_FILE\cf0 \strokec4 , \cf6 \strokec6 'utf-8'\cf0 \strokec4 );\cb1 \
+\cb3     \cf5 \strokec5 const\cf0 \strokec4  parsed = \cf7 \strokec7 JSON\cf0 \strokec4 .parse(data);\cb1 \
+\cb3     \cf5 \strokec5 if\cf0 \strokec4  (parsed.agents && \cf7 \strokec7 Array\cf0 \strokec4 .isArray(parsed.agents)) agents = parsed.agents;\cb1 \
+\cb3     \cf5 \strokec5 if\cf0 \strokec4  (parsed.points && \cf7 \strokec7 Array\cf0 \strokec4 .isArray(parsed.points)) points = parsed.points;\cb1 \
+\cb3     \cf5 \strokec5 if\cf0 \strokec4  (parsed.audits && \cf7 \strokec7 Array\cf0 \strokec4 .isArray(parsed.audits)) audits = parsed.audits;\cb1 \
+\cb3     \cf5 \strokec5 if\cf0 \strokec4  (parsed.documents && \cf7 \strokec7 Array\cf0 \strokec4 .isArray(parsed.documents)) documents = parsed.documents;\cb1 \
+\cb3     \cb1 \
+\cb3     \cf5 \strokec5 if\cf0 \strokec4  (!parsed.scriptSteps || parsed.scriptSteps.length !== \cf8 \strokec8 6\cf0 \strokec4  || parsed.scriptSteps[\cf8 \strokec8 0\cf0 \strokec4 ].key !== \cf6 \strokec6 'tech_water_temp'\cf0 \strokec4 ) \{\cb1 \
+\cb3       \cf5 \strokec5 await\cf0 \strokec4  saveToDisk();\cb1 \
+\cb3     \} \cf5 \strokec5 else\cf0 \strokec4  \{\cb1 \
+\cb3       scriptSteps = parsed.scriptSteps;\cb1 \
+\cb3     \}\cb1 \
+\cb3   \} \cf5 \strokec5 catch\cf0 \strokec4  (error: \cf5 \strokec5 any\cf0 \strokec4 ) \{\cb1 \
+\cb3     console.error(\cf6 \strokec6 'Error reading DB:'\cf0 \strokec4 , error);\cb1 \
+\cb3   \}\cb1 \
+\cb3 \}\cb1 \
+\
+\cb3 app.\cf5 \strokec5 get\cf0 \strokec4 (\cf6 \strokec6 '/api/documents'\cf0 \strokec4 , (req, res) => res.json(\{ success: \cf5 \strokec5 true\cf0 \strokec4 , documents \}));\cb1 \
+\
+\cb3 app.post(\cf6 \strokec6 '/api/documents'\cf0 \strokec4 , \cf5 \strokec5 async\cf0 \strokec4  (req, res) => \{\cb1 \
+\cb3   \cf5 \strokec5 const\cf0 \strokec4  \{ title, content, category \} = req.body;\cb1 \
+\cb3   \cf5 \strokec5 const\cf0 \strokec4  newDoc: \cf7 \strokec7 KnowledgeDocument\cf0 \strokec4  = \{\cb1 \
+\cb3     id: \cf6 \strokec6 `doc_\cf0 \strokec4 $\{\cf7 \strokec7 Date\cf0 \strokec4 .now()\}\cf6 \strokec6 `\cf0 \strokec4 ,\cb1 \
+\cb3     title: title || \cf6 \strokec6 '\uc0\u1053 \u1086 \u1074 \u1080 \u1081  \u1088 \u1077 \u1075 \u1083 \u1072 \u1084 \u1077 \u1085 \u1090 '\cf0 \strokec4 ,\cb1 \
+\cb3     category: category || \cf6 \strokec6 'general'\cf0 \strokec4 ,\cb1 \
+\cb3     isActive: \cf5 \strokec5 true\cf0 \strokec4 ,\cb1 \
+\cb3     content: content || \cf6 \strokec6 ''\cf0 \cb1 \strokec4 \
+\cb3   \};\cb1 \
+\cb3   documents.push(newDoc);\cb1 \
+\cb3   \cf5 \strokec5 await\cf0 \strokec4  saveToDisk();\cb1 \
+\cb3   res.json(\{ success: \cf5 \strokec5 true\cf0 \strokec4 , document: newDoc \});\cb1 \
+\cb3 \});\cb1 \
+\
+\cb3 app.put(\cf6 \strokec6 '/api/documents/:id/toggle'\cf0 \strokec4 , \cf5 \strokec5 async\cf0 \strokec4  (req, res) => \{\cb1 \
+\cb3   \cf5 \strokec5 const\cf0 \strokec4  doc = documents.find(d => d.id === req.params.id);\cb1 \
+\cb3   \cf5 \strokec5 if\cf0 \strokec4  (doc) doc.isActive = !doc.isActive;\cb1 \
+\cb3   \cf5 \strokec5 await\cf0 \strokec4  saveToDisk();\cb1 \
+\cb3   res.json(\{ success: \cf5 \strokec5 true\cf0 \strokec4 , documents \});\cb1 \
+\cb3 \});\cb1 \
+\
+\cb3 app.\cf5 \strokec5 delete\cf0 \strokec4 (\cf6 \strokec6 '/api/documents/:id'\cf0 \strokec4 , \cf5 \strokec5 async\cf0 \strokec4  (req, res) => \{\cb1 \
+\cb3   documents = documents.filter(d => d.id !== req.params.id);\cb1 \
+\cb3   \cf5 \strokec5 await\cf0 \strokec4  saveToDisk();\cb1 \
+\cb3   res.json(\{ success: \cf5 \strokec5 true\cf0 \strokec4 , documents \});\cb1 \
+\cb3 \});\cb1 \
+\
+\cb3 app.post(\cf6 \strokec6 '/api/documents/gap-analysis'\cf0 \strokec4 , \cf5 \strokec5 async\cf0 \strokec4  (req, res) => \{\cb1 \
+\cb3   \cf5 \strokec5 const\cf0 \strokec4  apiKey = process.env.\cf7 \strokec7 GEMINI_API_KEY\cf0 \strokec4  || \cf6 \strokec6 ''\cf0 \strokec4 ;\cb1 \
+\cb3   \cf5 \strokec5 if\cf0 \strokec4  (!apiKey) \cf5 \strokec5 return\cf0 \strokec4  res.json(\{ success: \cf5 \strokec5 false\cf0 \strokec4 , error: \cf6 \strokec6 'API \uc0\u1082 \u1083 \u1102 \u1095  \u1085 \u1077  \u1079 \u1085 \u1072 \u1081 \u1076 \u1077 \u1085 \u1086 '\cf0 \strokec4  \});\cb1 \
+\
+\cb3   \cf5 \strokec5 if\cf0 \strokec4  (audits.length === \cf8 \strokec8 0\cf0 \strokec4 ) \{\cb1 \
+\cb3     \cf5 \strokec5 return\cf0 \strokec4  res.json(\{ \cb1 \
+\cb3       success: \cf5 \strokec5 true\cf0 \strokec4 , \cb1 \
+\cb3       gap: \cf6 \strokec6 "\uc0\u1053 \u1077 \u1084 \u1072 \u1108  \u1079 \u1073 \u1077 \u1088 \u1077 \u1078 \u1077 \u1085 \u1080 \u1093  \u1072 \u1091 \u1076 \u1080 \u1090 \u1110 \u1074  \u1076 \u1083 \u1103  \u1072 \u1085 \u1072 \u1083 \u1110 \u1079 \u1091 ."\cf0 \strokec4 , \cb1 \
+\cb3       recommendation: \cf6 \strokec6 "\uc0\u1055 \u1088 \u1086 \u1074 \u1077 \u1076 \u1110 \u1090 \u1100  \u1093 \u1086 \u1095 \u1072  \u1073  \u1086 \u1076 \u1080 \u1085  \u1072 \u1091 \u1076 \u1080 \u1090 , \u1097 \u1086 \u1073  \u1064 \u1030  \u1084 \u1110 \u1075  \u1079 \u1085 \u1072 \u1081 \u1090 \u1080  '\u1089 \u1083 \u1110 \u1087 \u1110  \u1079 \u1086 \u1085 \u1080 '."\cf0 \strokec4  \cb1 \
+\cb3     \});\cb1 \
+\cb3   \}\cb1 \
+\
+\cb3   \cf5 \strokec5 try\cf0 \strokec4  \{\cb1 \
+\cb3     \cf5 \strokec5 const\cf0 \strokec4  ai = \cf5 \strokec5 new\cf0 \strokec4  \cf7 \strokec7 GoogleGenAI\cf0 \strokec4 (\{ apiKey: apiKey, httpOptions: \{ headers: \{ \cf6 \strokec6 'User-Agent'\cf0 \strokec4 : \cf6 \strokec6 'aistudio-build'\cf0 \strokec4  \} \} \});\cb1 \
+\cb3     \cb1 \
+\cb3     \cf5 \strokec5 const\cf0 \strokec4  recentAudits = audits.slice(\cf8 \strokec8 0\cf0 \strokec4 , \cf8 \strokec8 5\cf0 \strokec4 ).map(a => \cb1 \
+\cb3       \cf6 \strokec6 `\uc0\u1044 \u1072 \u1090 \u1072 : \cf0 \strokec4 $\{a.date\}\cf6 \strokec6 . \uc0\u1055 \u1086 \u1084 \u1080 \u1083 \u1082 \u1080  \u1072 \u1075 \u1077 \u1085 \u1090 \u1072 : \cf0 \strokec4 $\{a.stepsAnalysis.filter((s:\cf5 \strokec5 any\cf0 \strokec4 ) => s.status === \cf6 \strokec6 'failed'\cf0 \strokec4 ).map((s:\cf5 \strokec5 any\cf0 \strokec4 ) => s.explanation).join(\cf6 \strokec6 ' '\cf0 \strokec4 )\}\cf6 \strokec6 `\cf0 \cb1 \strokec4 \
+\cb3     ).join(\cf6 \strokec6 '\\n\\n'\cf0 \strokec4 );\cb1 \
+\
+\cb3     \cf5 \strokec5 const\cf0 \strokec4  activeDocs = documents.filter(d => d.isActive).map(d => \cf6 \strokec6 `- [\cf0 \strokec4 $\{d.title\}\cf6 \strokec6 ]`\cf0 \strokec4 ).join(\cf6 \strokec6 '\\n'\cf0 \strokec4 );\cb1 \
+\
+\cb3     \cf5 \strokec5 const\cf0 \strokec4  prompt = \cf6 \strokec6 `\uc0\u1058 \u1080  \u1043 \u1086 \u1083 \u1086 \u1074 \u1085 \u1080 \u1081  \u1041 \u1110 \u1079 \u1085 \u1077 \u1089 -\u1040 \u1085 \u1072 \u1083 \u1110 \u1090 \u1080 \u1082  \u1082 \u1086 \u1084 \u1087 \u1072 \u1085 \u1110 \u1111 . \u1058 \u1074 \u1086 \u1108  \u1079 \u1072 \u1074 \u1076 \u1072 \u1085 \u1085 \u1103 : \u1087 \u1086 \u1088 \u1110 \u1074 \u1085 \u1103 \u1090 \u1080  \u1089 \u1080 \u1089 \u1090 \u1077 \u1084 \u1085 \u1110  \u1087 \u1086 \u1084 \u1080 \u1083 \u1082 \u1080  \u1072 \u1075 \u1077 \u1085 \u1090 \u1110 \u1074  \u1079  \u1085 \u1072 \u1103 \u1074 \u1085 \u1086 \u1102  \u1073 \u1072 \u1079 \u1086 \u1102  \u1079 \u1085 \u1072 \u1085 \u1100  \u1090 \u1072  \u1079 \u1085 \u1072 \u1081 \u1090 \u1080  "\u1089 \u1083 \u1110 \u1087 \u1110  \u1079 \u1086 \u1085 \u1080 ".\cf0 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf6 \cb3 \strokec6     \cf0 \cb1 \strokec4 \
+\cf6 \cb3 \strokec6     \uc0\u1041 \u1040 \u1047 \u1040  \u1047 \u1053 \u1040 \u1053 \u1068  (\u1110 \u1089 \u1085 \u1091 \u1102 \u1095 \u1110  \u1076 \u1086 \u1082 \u1091 \u1084 \u1077 \u1085 \u1090 \u1080 ):\cf0 \cb1 \strokec4 \
+\cf6 \cb3 \strokec6     \cf0 \strokec4 $\{activeDocs || \cf6 \strokec6 '\uc0\u1055 \u1086 \u1088 \u1086 \u1078 \u1085 \u1100 \u1086 '\cf0 \strokec4 \}\cb1 \
+\cf6 \cb3 \strokec6     \cf0 \cb1 \strokec4 \
+\cf6 \cb3 \strokec6     \uc0\u1055 \u1054 \u1052 \u1048 \u1051 \u1050 \u1048  \u1047  \u1054 \u1057 \u1058 \u1040 \u1053 \u1053 \u1030 \u1061  \u1040 \u1059 \u1044 \u1048 \u1058 \u1030 \u1042 :\cf0 \cb1 \strokec4 \
+\cf6 \cb3 \strokec6     \cf0 \strokec4 $\{recentAudits || \cf6 \strokec6 '\uc0\u1053 \u1077 \u1084 \u1072 \u1108  \u1079 \u1072 \u1092 \u1110 \u1082 \u1089 \u1086 \u1074 \u1072 \u1085 \u1080 \u1093  \u1087 \u1086 \u1084 \u1080 \u1083 \u1086 \u1082 '\cf0 \strokec4 \}\cb1 \
+\cf6 \cb3 \strokec6     \cf0 \cb1 \strokec4 \
+\cf6 \cb3 \strokec6     \uc0\u1055 \u1056 \u1040 \u1042 \u1048 \u1051 \u1040  \u1040 \u1053 \u1040 \u1051 \u1030 \u1047 \u1059 :\cf0 \cb1 \strokec4 \
+\cf6 \cb3 \strokec6     1. \uc0\u1047 \u1085 \u1072 \u1081 \u1076 \u1080  1 \u1089 \u1087 \u1110 \u1083 \u1100 \u1085 \u1091  \u1087 \u1088 \u1086 \u1073 \u1083 \u1077 \u1084 \u1091  (\u1076 \u1077  \u1072 \u1075 \u1077 \u1085 \u1090 \u1080  \u1085 \u1072 \u1081 \u1095 \u1072 \u1089 \u1090 \u1110 \u1096 \u1077  \u1087 \u1083 \u1091 \u1090 \u1072 \u1102 \u1090 \u1100 \u1089 \u1103  \u1072 \u1073 \u1086  \u1095 \u1086 \u1075 \u1086  \u1085 \u1077  \u1074 \u1080 \u1089 \u1090 \u1072 \u1095 \u1072 \u1108  \u1074  \u1076 \u1086 \u1082 \u1091 \u1084 \u1077 \u1085 \u1090 \u1072 \u1093 ).\cf0 \cb1 \strokec4 \
+\cf6 \cb3 \strokec6     2. \uc0\u1047 \u1072 \u1087 \u1088 \u1086 \u1087 \u1086 \u1085 \u1091 \u1081  \u1089 \u1090 \u1074 \u1086 \u1088 \u1080 \u1090 \u1080  \u1085 \u1086 \u1074 \u1080 \u1081  \u1088 \u1077 \u1075 \u1083 \u1072 \u1084 \u1077 \u1085 \u1090  \u1072 \u1073 \u1086  \u1086 \u1085 \u1086 \u1074 \u1080 \u1090 \u1080  \u1110 \u1089 \u1085 \u1091 \u1102 \u1095 \u1080 \u1081 , \u1097 \u1086 \u1073  \u1074 \u1080 \u1088 \u1110 \u1096 \u1080 \u1090 \u1080  \u1094 \u1102  \u1087 \u1088 \u1086 \u1073 \u1083 \u1077 \u1084 \u1091 .\cf0 \cb1 \strokec4 \
+\cf6 \cb3 \strokec6     \cf0 \cb1 \strokec4 \
+\cf6 \cb3 \strokec6     \uc0\u1055 \u1086 \u1074 \u1077 \u1088 \u1085 \u1080  \u1057 \u1058 \u1056 \u1054 \u1043 \u1054  \u1091  JSON \u1092 \u1086 \u1088 \u1084 \u1072 \u1090 \u1110  (\u1073 \u1077 \u1079  \u1084 \u1072 \u1088 \u1082 \u1076 \u1072 \u1091 \u1085 \u1091 , \u1073 \u1077 \u1079  \u1073 \u1083 \u1086 \u1082 \u1110 \u1074  \u1092 \u1086 \u1088 \u1084 \u1072 \u1090 \u1091 \u1074 \u1072 \u1085 \u1085 \u1103 ): \cf0 \cb1 \strokec4 \
+\cf6 \cb3 \strokec6     \{"gap": "\uc0\u1076 \u1077 \u1090 \u1072 \u1083 \u1100 \u1085 \u1080 \u1081  \u1086 \u1087 \u1080 \u1089  \u1079 \u1085 \u1072 \u1081 \u1076 \u1077 \u1085 \u1086 \u1111  \u1087 \u1088 \u1086 \u1073 \u1083 \u1077 \u1084 \u1080 ", "recommendation": "\u1082 \u1086 \u1085 \u1082 \u1088 \u1077 \u1090 \u1085 \u1072  \u1085 \u1072 \u1079 \u1074 \u1072  \u1090 \u1072  \u1089 \u1091 \u1090 \u1100  \u1085 \u1086 \u1074 \u1086 \u1075 \u1086  \u1088 \u1077 \u1075 \u1083 \u1072 \u1084 \u1077 \u1085 \u1090 \u1091 "\}`\cf0 \strokec4 ;\cb1 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf0 \cb3     \cf5 \strokec5 const\cf0 \strokec4  response = \cf5 \strokec5 await\cf0 \strokec4  ai.models.generateContent(\{\cb1 \
+\cb3       model: \cf6 \strokec6 'gemini-2.5-flash'\cf0 \strokec4 ,\cb1 \
+\cb3       contents: [\{ text: prompt \}],\cb1 \
+\cb3       config: \{\cb1 \
+\cb3         responseMimeType: \cf6 \strokec6 'application/json'\cf0 \strokec4 ,\cb1 \
+\cb3         responseSchema: \{\cb1 \
+\cb3           \cf5 \strokec5 type\cf0 \strokec4 : \cf7 \strokec7 Type\cf0 \strokec4 .\cf7 \strokec7 OBJECT\cf0 \strokec4 ,\cb1 \
+\cb3           properties: \{\cb1 \
+\cb3             gap: \{ \cf5 \strokec5 type\cf0 \strokec4 : \cf7 \strokec7 Type\cf0 \strokec4 .\cf7 \strokec7 STRING\cf0 \strokec4  \},\cb1 \
+\cb3             recommendation: \{ \cf5 \strokec5 type\cf0 \strokec4 : \cf7 \strokec7 Type\cf0 \strokec4 .\cf7 \strokec7 STRING\cf0 \strokec4  \}\cb1 \
+\cb3           \},\cb1 \
+\cb3           required: [\cf6 \strokec6 'gap'\cf0 \strokec4 , \cf6 \strokec6 'recommendation'\cf0 \strokec4 ]\cb1 \
+\cb3         \}\cb1 \
+\cb3       \}\cb1 \
+\cb3     \});\cb1 \
+\
+\cb3     \cf5 \strokec5 let\cf0 \strokec4  rawText = response.text || \cf6 \strokec6 '\{\}'\cf0 \strokec4 ;\cb1 \
+\cb3     rawText = rawText.replace(\cf9 \strokec9 /```(json)?/\cf5 \strokec5 gi\cf0 \strokec4 , \cf6 \strokec6 ''\cf0 \strokec4 ).replace(\cf9 \strokec9 /```/\cf5 \strokec5 g\cf0 \strokec4 , \cf6 \strokec6 ''\cf0 \strokec4 ).trim();\cb1 \
+\cb3     \cf5 \strokec5 const\cf0 \strokec4  firstBrace = rawText.indexOf(\cf6 \strokec6 '\{'\cf0 \strokec4 );\cb1 \
+\cb3     \cf5 \strokec5 const\cf0 \strokec4  lastBrace = rawText.lastIndexOf(\cf6 \strokec6 '\}'\cf0 \strokec4 );\cb1 \
+\cb3     \cf5 \strokec5 if\cf0 \strokec4  (firstBrace !== -\cf8 \strokec8 1\cf0 \strokec4  && lastBrace !== -\cf8 \strokec8 1\cf0 \strokec4 ) \{\cb1 \
+\cb3       rawText = rawText.substring(firstBrace, lastBrace + \cf8 \strokec8 1\cf0 \strokec4 );\cb1 \
+\cb3     \}\cb1 \
+\cb3     \cf5 \strokec5 const\cf0 \strokec4  parsed = \cf7 \strokec7 JSON\cf0 \strokec4 .parse(rawText);\cb1 \
+\cb3     res.json(\{ success: \cf5 \strokec5 true\cf0 \strokec4 , gap: parsed.gap, recommendation: parsed.recommendation \});\cb1 \
+\
+\cb3   \} \cf5 \strokec5 catch\cf0 \strokec4  (e: \cf5 \strokec5 any\cf0 \strokec4 ) \{\cb1 \
+\cb3     console.error(\cf6 \strokec6 'Gap Analysis Error:'\cf0 \strokec4 , e);\cb1 \
+\cb3     res.json(\{ success: \cf5 \strokec5 false\cf0 \strokec4 , error: e.message || \cf6 \strokec6 '\uc0\u1042 \u1085 \u1091 \u1090 \u1088 \u1110 \u1096 \u1085 \u1103  \u1087 \u1086 \u1084 \u1080 \u1083 \u1082 \u1072  \u1064 \u1030 '\cf0 \strokec4  \});\cb1 \
+\cb3   \}\cb1 \
+\cb3 \});\cb1 \
+\
+\cb3 app.\cf5 \strokec5 get\cf0 \strokec4 (\cf6 \strokec6 '/api/agents'\cf0 \strokec4 , (req, res) => res.json(agents));\cb1 \
+\cb3 app.\cf5 \strokec5 get\cf0 \strokec4 (\cf6 \strokec6 '/api/audits'\cf0 \strokec4 , (req, res) => res.json(audits));\cb1 \
+\cb3 app.post(\cf6 \strokec6 '/api/audits/delete'\cf0 \strokec4 , \cf5 \strokec5 async\cf0 \strokec4  (req, res) => \{\cb1 \
+\cb3   audits = audits.filter(a => a.id !== req.body.id);\cb1 \
+\cb3   \cf5 \strokec5 await\cf0 \strokec4  saveToDisk();\cb1 \
+\cb3   res.json(\{ success: \cf5 \strokec5 true\cf0 \strokec4 , id: req.body.id \});\cb1 \
+\cb3 \});\cb1 \
+\
+\cb3 app.post(\cf6 \strokec6 '/api/audits/analyze'\cf0 \strokec4 , \cf5 \strokec5 async\cf0 \strokec4  (req, res) => \{\cb1 \
+\cb3   \cf5 \strokec5 const\cf0 \strokec4  \{ agentId, pointName, transcriptText, audioBase64, audioMimeType \} = req.body;\cb1 \
+\cb3   \cf5 \strokec5 const\cf0 \strokec4  agent = agents.find(a => a.id === agentId);\cb1 \
+\cb3   \cf5 \strokec5 const\cf0 \strokec4  apiKey = process.env.\cf7 \strokec7 GEMINI_API_KEY\cf0 \strokec4  || \cf6 \strokec6 ''\cf0 \strokec4 ;\cb1 \
+\
+\cb3   \cf5 \strokec5 try\cf0 \strokec4  \{\cb1 \
+\cb3     \cf5 \strokec5 const\cf0 \strokec4  ai = \cf5 \strokec5 new\cf0 \strokec4  \cf7 \strokec7 GoogleGenAI\cf0 \strokec4 (\{ apiKey: apiKey, httpOptions: \{ headers: \{ \cf6 \strokec6 'User-Agent'\cf0 \strokec4 : \cf6 \strokec6 'aistudio-build'\cf0 \strokec4  \} \} \});\cb1 \
+\cb3     \cf5 \strokec5 let\cf0 \strokec4  parts: \cf5 \strokec5 any\cf0 \strokec4 [] = [];\cb1 \
+\
+\cb3     \cf5 \strokec5 if\cf0 \strokec4  (audioBase64) \{\cb1 \
+\cb3       parts.push(\{ inlineData: \{ data: audioBase64, mimeType: audioMimeType || \cf6 \strokec6 'audio/mp4'\cf0 \strokec4  \} \});\cb1 \
+\cb3       parts.push(\{ text: \cf6 \strokec6 `\uc0\u1040 \u1085 \u1072 \u1083 \u1110 \u1079 \u1091 \u1081  \u1072 \u1091 \u1076 \u1110 \u1086 \u1079 \u1072 \u1087 \u1080 \u1089 .`\cf0 \strokec4  \});\cb1 \
+\cb3     \} \cf5 \strokec5 else\cf0 \strokec4  \{\cb1 \
+\cb3       parts.push(\{ text: \cf6 \strokec6 `\uc0\u1054 \u1089 \u1100  \u1090 \u1077 \u1082 \u1089 \u1090  \u1076 \u1110 \u1072 \u1083 \u1086 \u1075 \u1091  \u1076 \u1083 \u1103  \u1072 \u1085 \u1072 \u1083 \u1110 \u1079 \u1091 :\\n\cf0 \strokec4 $\{transcriptText\}\cf6 \strokec6 `\cf0 \strokec4  \});\cb1 \
+\cb3     \}\cb1 \
+\
+\cb3     \cf5 \strokec5 const\cf0 \strokec4  activeDocs = documents.filter(d => d.isActive).map(d => \cf6 \strokec6 `[\cf0 \strokec4 $\{d.title\}\cf6 \strokec6 ]:\\n\cf0 \strokec4 $\{d.content\}\cf6 \strokec6 `\cf0 \strokec4 ).join(\cf6 \strokec6 '\\n\\n'\cf0 \strokec4 );\cb1 \
+\cb3     \cf5 \strokec5 const\cf0 \strokec4  criteriaList = scriptSteps.map(s => \cf6 \strokec6 `- \uc0\u1050 \u1051 \u1070 \u1063 : \cf0 \strokec4 $\{s.key\}\cf6 \strokec6  | \cf0 \strokec4 $\{s.title\}\cf6 \strokec6 `\cf0 \strokec4 ).join(\cf6 \strokec6 '\\n'\cf0 \strokec4 );\cb1 \
+\
+\cb3     \cf5 \strokec5 const\cf0 \strokec4  systemPrompt = \cf6 \strokec6 `\uc0\u1058 \u1080  \u1057 \u1091 \u1087 \u1077 \u1088 \u1074 \u1072 \u1081 \u1079 \u1077 \u1088  "Anima Volitiva". \u1058 \u1074 \u1086 \u1103  \u1084 \u1077 \u1090 \u1072  - \u1086 \u1094 \u1110 \u1085 \u1080 \u1090 \u1080  \u1076 \u1110 \u1072 \u1083 \u1086 \u1075  \u1079 \u1072  6 \u1082 \u1088 \u1080 \u1090 \u1077 \u1088 \u1110 \u1103 \u1084 \u1080 :\cf0 \cb1 \strokec4 \
+\cb3 $\{criteriaList\}\cb1 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf6 \cb3 \strokec6 \uc0\u1041 \u1040 \u1047 \u1040  \u1047 \u1053 \u1040 \u1053 \u1068  \u1050 \u1054 \u1052 \u1055 \u1040 \u1053 \u1030 \u1031 :\cf0 \cb1 \strokec4 \
+\pard\pardeftab720\partightenfactor0
+\cf0 \cb3 $\{activeDocs\}\cb1 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf6 \cb3 \strokec6 \uc0\u1042 \u1040 \u1046 \u1051 \u1048 \u1042 \u1045  \u1054 \u1041 \u1052 \u1045 \u1046 \u1045 \u1053 \u1053 \u1071  (\u1044 \u1051 \u1071  \u1044 \u1054 \u1042 \u1043 \u1048 \u1061  \u1040 \u1059 \u1044 \u1030 \u1054 ):\cf0 \cb1 \strokec4 \
+\cf6 \cb3 \strokec6 \uc0\u1059  \u1087 \u1086 \u1083 \u1110  "transcript" \u1053 \u1045  \u1087 \u1080 \u1096 \u1080  \u1074 \u1089 \u1102  \u1088 \u1086 \u1079 \u1084 \u1086 \u1074 \u1091  \u1089 \u1083 \u1086 \u1074 \u1086  \u1074  \u1089 \u1083 \u1086 \u1074 \u1086  \u1076 \u1086 \u1089 \u1083 \u1110 \u1074 \u1085 \u1086 , \u1103 \u1082 \u1097 \u1086  \u1074 \u1086 \u1085 \u1072  \u1076 \u1091 \u1078 \u1077  \u1076 \u1086 \u1074 \u1075 \u1072 . \u1047 \u1072 \u1084 \u1110 \u1089 \u1090 \u1100  \u1094 \u1100 \u1086 \u1075 \u1086  \u1079 \u1088 \u1086 \u1073 \u1080  \u1076 \u1077 \u1090 \u1072 \u1083 \u1100 \u1085 \u1080 \u1081  \u1090 \u1072  \u1089 \u1090 \u1088 \u1091 \u1082 \u1090 \u1091 \u1088 \u1086 \u1074 \u1072 \u1085 \u1080 \u1081  \u1050 \u1054 \u1053 \u1057 \u1055 \u1045 \u1050 \u1058  \u1079 \u1091 \u1089 \u1090 \u1088 \u1110 \u1095 \u1110  \u1079  \u1082 \u1083 \u1102 \u1095 \u1086 \u1074 \u1080 \u1084 \u1080  \u1077 \u1090 \u1072 \u1087 \u1072 \u1084 \u1080 , \u1094 \u1080 \u1090 \u1072 \u1090 \u1072 \u1084 \u1080 , \u1077 \u1084 \u1086 \u1094 \u1110 \u1081 \u1085 \u1080 \u1084  \u1089 \u1090 \u1072 \u1085 \u1086 \u1084  \u1082 \u1083 \u1110 \u1108 \u1085 \u1090 \u1072  \u1090 \u1072  \u1085 \u1072 \u1081 \u1074 \u1072 \u1078 \u1083 \u1080 \u1074 \u1110 \u1096 \u1080 \u1084 \u1080  \u1088 \u1077 \u1087 \u1083 \u1110 \u1082 \u1072 \u1084 \u1080 . \u1062 \u1077  \u1079 \u1073 \u1077 \u1088 \u1077 \u1078 \u1077  \u1087 \u1072 \u1084 '\u1103 \u1090 \u1100  \u1076 \u1083 \u1103  \u1103 \u1082 \u1110 \u1089 \u1085 \u1086 \u1075 \u1086  \u1072 \u1085 \u1072 \u1083 \u1110 \u1079 \u1091 .\cf0 \cb1 \strokec4 \
+\
+\cf6 \cb3 \strokec6 \uc0\u1030 \u1053 \u1057 \u1058 \u1056 \u1059 \u1050 \u1062 \u1030 \u1071 :\cf0 \cb1 \strokec4 \
+\cf6 \cb3 \strokec6 1. \uc0\u1042 \u1040 \u1046 \u1051 \u1048 \u1042 \u1054  (\u1055 \u1056 \u1054 \u1044 \u1040 \u1042 \u1045 \u1062 \u1068  VS \u1051 \u1055 \u1056 ): \u1050 \u1086 \u1084 \u1087 \u1072 \u1085 \u1110 \u1103  \u1053 \u1045  \u1064 \u1058 \u1056 \u1040 \u1060 \u1059 \u1028  \u1072 \u1075 \u1077 \u1085 \u1090 \u1110 \u1074 . \u1071 \u1082 \u1097 \u1086  \u1072 \u1075 \u1077 \u1085 \u1090  \u1088 \u1086 \u1079 \u1084 \u1086 \u1074 \u1083 \u1103 \u1108  \u1051 \u1048 \u1064 \u1045  \u1047  \u1055 \u1056 \u1054 \u1044 \u1040 \u1042 \u1062 \u1045 \u1052  (\u1110  \u1084 \u1077 \u1090 \u1072  \u1074 \u1080 \u1081 \u1090 \u1080  \u1085 \u1072  \u1074 \u1083 \u1072 \u1089 \u1085 \u1080 \u1082 \u1072 /\u1076 \u1080 \u1088 \u1077 \u1082 \u1090 \u1086 \u1088 \u1072 ), \u1086 \u1073 \u1075 \u1086 \u1074 \u1086 \u1088 \u1077 \u1085 \u1085 \u1103  \u1092 \u1110 \u1085 \u1072 \u1085 \u1089 \u1110 \u1074 , \u1074 \u1086 \u1076 \u1080  (180 ppm) \u1090 \u1072  \u1091 \u1084 \u1086 \u1074  \u1089 \u1091 \u1073 \u1086 \u1088 \u1077 \u1085 \u1076 \u1080  \u1053 \u1045  \u1028  \u1054 \u1041 \u1054 \u1042 '\u1071 \u1047 \u1050 \u1054 \u1042 \u1048 \u1052 . \u1042  \u1090 \u1072 \u1082 \u1086 \u1084 \u1091  \u1088 \u1072 \u1079 \u1110  \u1076 \u1083 \u1103  \u1082 \u1088 \u1080 \u1090 \u1077 \u1088 \u1110 \u1111 \u1074  \u1060 \u1110 \u1085 \u1072 \u1085 \u1089 \u1080 , \u1042 \u1086 \u1076 \u1072 , \u1059 \u1084 \u1086 \u1074 \u1080  \u1089 \u1091 \u1073 \u1086 \u1088 \u1077 \u1085 \u1076 \u1080  \u1089 \u1090 \u1072 \u1074  \u1089 \u1090 \u1072 \u1090 \u1091 \u1089  "completed" \u1110  \u1087 \u1080 \u1096 \u1080 : "\u1040 \u1075 \u1077 \u1085 \u1090  \u1089 \u1087 \u1110 \u1083 \u1082 \u1091 \u1074 \u1072 \u1074 \u1089 \u1103  \u1083 \u1080 \u1096 \u1077  \u1079  \u1087 \u1088 \u1086 \u1076 \u1072 \u1074 \u1094 \u1077 \u1084 , \u1076 \u1077 \u1090 \u1072 \u1083 \u1110  \u1086 \u1073 \u1075 \u1086 \u1074 \u1086 \u1088 \u1102 \u1102 \u1090 \u1100 \u1089 \u1103  \u1079  \u1051 \u1055 \u1056 ."\cf0 \cb1 \strokec4 \
+\cf6 \cb3 \strokec6 2. \uc0\u1058 \u1080  \u1090 \u1110 \u1083 \u1100 \u1082 \u1080  \u1086 \u1094 \u1110 \u1085 \u1102 \u1108 \u1096  \u1082 \u1086 \u1078 \u1077 \u1085  \u1079  6 \u1082 \u1088 \u1080 \u1090 \u1077 \u1088 \u1110 \u1111 \u1074  \u1089 \u1090 \u1072 \u1090 \u1091 \u1089 \u1072 \u1084 \u1080 : "completed" (\u1110 \u1076 \u1077 \u1072 \u1083 \u1100 \u1085 \u1086  \u1072 \u1073 \u1086  \u1085 \u1077  \u1079 \u1072 \u1089 \u1090 \u1086 \u1089 \u1086 \u1074 \u1091 \u1108 \u1090 \u1100 \u1089 \u1103 ), "partial" (\u1095 \u1072 \u1089 \u1090 \u1082 \u1086 \u1074 \u1086 ), "failed" (\u1075 \u1088 \u1091 \u1073 \u1072  \u1087 \u1086 \u1084 \u1080 \u1083 \u1082 \u1072 ).\cf0 \cb1 \strokec4 \
+\cf6 \cb3 \strokec6 3. "supervisorActions": \uc0\u1053 \u1072 \u1087 \u1080 \u1096 \u1080  \u1076 \u1086  3-\u1093  \u1076 \u1110 \u1081  \u1076 \u1083 \u1103  \u1089 \u1091 \u1087 \u1077 \u1088 \u1074 \u1072 \u1081 \u1079 \u1077 \u1088 \u1072  \u1042 \u1048 \u1050 \u1051 \u1070 \u1063 \u1053 \u1054  \u1085 \u1072  \u1086 \u1089 \u1085 \u1086 \u1074 \u1110  \u1082 \u1088 \u1080 \u1090 \u1077 \u1088 \u1110 \u1111 \u1074  \u1079 \u1110  \u1089 \u1090 \u1072 \u1090 \u1091 \u1089 \u1086 \u1084  "failed" \u1072 \u1073 \u1086  "partial".\cf0 \cb1 \strokec4 \
+\
+\cf6 \cb3 \strokec6 \uc0\u1055 \u1086 \u1074 \u1077 \u1088 \u1085 \u1080  \u1088 \u1077 \u1079 \u1091 \u1083 \u1100 \u1090 \u1072 \u1090  \u1057 \u1058 \u1056 \u1054 \u1043 \u1054  \u1091  JSON.`\cf0 \strokec4 ;\cb1 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf0 \cb3     \cf5 \strokec5 const\cf0 \strokec4  response = \cf5 \strokec5 await\cf0 \strokec4  ai.models.generateContent(\{\cb1 \
+\cb3       model: \cf6 \strokec6 'gemini-2.5-flash'\cf0 \strokec4 ,\cb1 \
+\cb3       contents: parts,\cb1 \
+\cb3       config: \{\cb1 \
+\cb3         systemInstruction: systemPrompt,\cb1 \
+\cb3         responseMimeType: \cf6 \strokec6 'application/json'\cf0 \strokec4 ,\cb1 \
+\cb3         responseSchema: \{\cb1 \
+\cb3           \cf5 \strokec5 type\cf0 \strokec4 : \cf7 \strokec7 Type\cf0 \strokec4 .\cf7 \strokec7 OBJECT\cf0 \strokec4 ,\cb1 \
+\cb3           properties: \{\cb1 \
+\cb3             transcript: \{ \cf5 \strokec5 type\cf0 \strokec4 : \cf7 \strokec7 Type\cf0 \strokec4 .\cf7 \strokec7 STRING\cf0 \strokec4 , description: \cf6 \strokec6 '\uc0\u1044 \u1077 \u1090 \u1072 \u1083 \u1100 \u1085 \u1080 \u1081  \u1089 \u1090 \u1088 \u1091 \u1082 \u1090 \u1091 \u1088 \u1086 \u1074 \u1072 \u1085 \u1080 \u1081  \u1082 \u1086 \u1085 \u1089 \u1087 \u1077 \u1082 \u1090  \u1088 \u1086 \u1079 \u1084 \u1086 \u1074 \u1080 , \u1082 \u1083 \u1102 \u1095 \u1086 \u1074 \u1110  \u1092 \u1088 \u1072 \u1079 \u1080 '\cf0 \strokec4  \},\cb1 \
+\cb3             stepsAnalysis: \{\cb1 \
+\cb3               \cf5 \strokec5 type\cf0 \strokec4 : \cf7 \strokec7 Type\cf0 \strokec4 .\cf7 \strokec7 ARRAY\cf0 \strokec4 ,\cb1 \
+\cb3               items: \{\cb1 \
+\cb3                 \cf5 \strokec5 type\cf0 \strokec4 : \cf7 \strokec7 Type\cf0 \strokec4 .\cf7 \strokec7 OBJECT\cf0 \strokec4 ,\cb1 \
+\cb3                 properties: \{\cb1 \
+\cb3                   stepKey: \{ \cf5 \strokec5 type\cf0 \strokec4 : \cf7 \strokec7 Type\cf0 \strokec4 .\cf7 \strokec7 STRING\cf0 \strokec4  \},\cb1 \
+\cb3                   stepTitle: \{ \cf5 \strokec5 type\cf0 \strokec4 : \cf7 \strokec7 Type\cf0 \strokec4 .\cf7 \strokec7 STRING\cf0 \strokec4  \},\cb1 \
+\cb3                   status: \{ \cf5 \strokec5 type\cf0 \strokec4 : \cf7 \strokec7 Type\cf0 \strokec4 .\cf7 \strokec7 STRING\cf0 \strokec4  \},\cb1 \
+\cb3                   explanation: \{ \cf5 \strokec5 type\cf0 \strokec4 : \cf7 \strokec7 Type\cf0 \strokec4 .\cf7 \strokec7 STRING\cf0 \strokec4  \},\cb1 \
+\cb3                   detectedPhrases: \{ \cf5 \strokec5 type\cf0 \strokec4 : \cf7 \strokec7 Type\cf0 \strokec4 .\cf7 \strokec7 ARRAY\cf0 \strokec4 , items: \{ \cf5 \strokec5 type\cf0 \strokec4 : \cf7 \strokec7 Type\cf0 \strokec4 .\cf7 \strokec7 STRING\cf0 \strokec4  \} \}\cb1 \
+\cb3                 \},\cb1 \
+\cb3                 required: [\cf6 \strokec6 'stepKey'\cf0 \strokec4 , \cf6 \strokec6 'stepTitle'\cf0 \strokec4 , \cf6 \strokec6 'status'\cf0 \strokec4 , \cf6 \strokec6 'explanation'\cf0 \strokec4 ]\cb1 \
+\cb3               \}\cb1 \
+\cb3             \},\cb1 \
+\cb3             critiqueText: \{ \cf5 \strokec5 type\cf0 \strokec4 : \cf7 \strokec7 Type\cf0 \strokec4 .\cf7 \strokec7 STRING\cf0 \strokec4  \},\cb1 \
+\cb3             supervisorActions: \{ \cf5 \strokec5 type\cf0 \strokec4 : \cf7 \strokec7 Type\cf0 \strokec4 .\cf7 \strokec7 ARRAY\cf0 \strokec4 , items: \{ \cf5 \strokec5 type\cf0 \strokec4 : \cf7 \strokec7 Type\cf0 \strokec4 .\cf7 \strokec7 STRING\cf0 \strokec4  \} \}\cb1 \
+\cb3           \},\cb1 \
+\cb3           required: [\cf6 \strokec6 'transcript'\cf0 \strokec4 , \cf6 \strokec6 'stepsAnalysis'\cf0 \strokec4 , \cf6 \strokec6 'critiqueText'\cf0 \strokec4 , \cf6 \strokec6 'supervisorActions'\cf0 \strokec4 ]\cb1 \
+\cb3         \}\cb1 \
+\cb3       \}\cb1 \
+\cb3     \});\cb1 \
+\
+\cb3     \cf5 \strokec5 let\cf0 \strokec4  rawText = response.text || \cf6 \strokec6 '\{\}'\cf0 \strokec4 ;\cb1 \
+\cb3     rawText = rawText.replace(\cf9 \strokec9 /```(json)?/\cf5 \strokec5 gi\cf0 \strokec4 , \cf6 \strokec6 ''\cf0 \strokec4 ).replace(\cf9 \strokec9 /```/\cf5 \strokec5 g\cf0 \strokec4 , \cf6 \strokec6 ''\cf0 \strokec4 ).trim();\cb1 \
+\cb3     \cf5 \strokec5 const\cf0 \strokec4  firstBrace = rawText.indexOf(\cf6 \strokec6 '\{'\cf0 \strokec4 );\cb1 \
+\cb3     \cf5 \strokec5 const\cf0 \strokec4  lastBrace = rawText.lastIndexOf(\cf6 \strokec6 '\}'\cf0 \strokec4 );\cb1 \
+\cb3     \cf5 \strokec5 if\cf0 \strokec4  (firstBrace !== -\cf8 \strokec8 1\cf0 \strokec4  && lastBrace !== -\cf8 \strokec8 1\cf0 \strokec4 ) \{\cb1 \
+\cb3       rawText = rawText.substring(firstBrace, lastBrace + \cf8 \strokec8 1\cf0 \strokec4 );\cb1 \
+\cb3     \}\cb1 \
+\cb3     \cf5 \strokec5 const\cf0 \strokec4  parsedReport = \cf7 \strokec7 JSON\cf0 \strokec4 .parse(rawText);\cb1 \
+\
+\cb3     \cf2 \strokec2 // \uc0\u1056 \u1086 \u1079 \u1088 \u1072 \u1093 \u1091 \u1085 \u1086 \u1082  \u1073 \u1072 \u1083 \u1110 \u1074 \cf0 \cb1 \strokec4 \
+\cb3     \cf5 \strokec5 let\cf0 \strokec4  totalScore = \cf8 \strokec8 0\cf0 \strokec4 ;\cb1 \
+\cb3     \cf5 \strokec5 let\cf0 \strokec4  maxScore = \cf8 \strokec8 0\cf0 \strokec4 ;\cb1 \
+\
+\cb3     \cf5 \strokec5 const\cf0 \strokec4  validatedSteps = scriptSteps.map(refStep => \{\cb1 \
+\cb3        \cf5 \strokec5 const\cf0 \strokec4  aiStep = parsedReport.stepsAnalysis.find((s:\cf5 \strokec5 any\cf0 \strokec4 ) => s.stepKey === refStep.key || s.stepTitle.includes(refStep.title)) \cb1 \
+\cb3                       || \{ status: \cf6 \strokec6 'failed'\cf0 \strokec4 , explanation: \cf6 \strokec6 '\uc0\u1030 \u1030  \u1085 \u1077  \u1086 \u1094 \u1110 \u1085 \u1080 \u1074  \u1094 \u1077 \u1081  \u1073 \u1083 \u1086 \u1082 '\cf0 \strokec4 , detectedPhrases: [] \};\cb1 \
+\cb3        \cb1 \
+\cb3        maxScore += refStep.weight;\cb1 \
+\cb3        \cf5 \strokec5 if\cf0 \strokec4  (aiStep.status === \cf6 \strokec6 'completed'\cf0 \strokec4 ) totalScore += refStep.weight;\cb1 \
+\cb3        \cf5 \strokec5 else\cf0 \strokec4  \cf5 \strokec5 if\cf0 \strokec4  (aiStep.status === \cf6 \strokec6 'partial'\cf0 \strokec4 ) totalScore += (refStep.weight * \cf8 \strokec8 0.5\cf0 \strokec4 );\cb1 \
+\
+\cb3        \cf5 \strokec5 return\cf0 \strokec4  \{\cb1 \
+\cb3          stepKey: refStep.key,\cb1 \
+\cb3          stepTitle: refStep.title,\cb1 \
+\cb3          status: aiStep.status,\cb1 \
+\cb3          explanation: aiStep.explanation,\cb1 \
+\cb3          detectedPhrases: aiStep.detectedPhrases || []\cb1 \
+\cb3        \};\cb1 \
+\cb3     \});\cb1 \
+\
+\cb3     \cf5 \strokec5 const\cf0 \strokec4  calculatedComplianceScore = maxScore > \cf8 \strokec8 0\cf0 \strokec4  ? \cf7 \strokec7 Math\cf0 \strokec4 .round((totalScore / maxScore) * \cf8 \strokec8 100\cf0 \strokec4 ) : \cf8 \strokec8 0\cf0 \strokec4 ;\cb1 \
+\
+\cb3     \cf5 \strokec5 const\cf0 \strokec4  finalReport: \cf7 \strokec7 AuditReport\cf0 \strokec4  = \{\cb1 \
+\cb3       id: \cf6 \strokec6 `audit_\cf0 \strokec4 $\{\cf7 \strokec7 Date\cf0 \strokec4 .now()\}\cf6 \strokec6 `\cf0 \strokec4 ,\cb1 \
+\cb3       agentId: agent?.id || \cf6 \strokec6 'unknown'\cf0 \strokec4 ,\cb1 \
+\cb3       agentName: agent?.name || \cf6 \strokec6 '\uc0\u1053 \u1077 \u1074 \u1110 \u1076 \u1086 \u1084 \u1080 \u1081 '\cf0 \strokec4 ,\cb1 \
+\cb3       pointId: \cf6 \strokec6 'custom'\cf0 \strokec4 ,\cb1 \
+\cb3       pointName: pointName || \cf6 \strokec6 '\uc0\u1053 \u1077 \u1074 \u1110 \u1076 \u1086 \u1084 \u1072  \u1090 \u1086 \u1095 \u1082 \u1072 '\cf0 \strokec4 ,\cb1 \
+\cb3       pointAddress: \cf6 \strokec6 ''\cf0 \strokec4 ,\cb1 \
+\cb3       date: \cf5 \strokec5 new\cf0 \strokec4  \cf7 \strokec7 Date\cf0 \strokec4 ().toISOString().split(\cf6 \strokec6 'T'\cf0 \strokec4 )[\cf8 \strokec8 0\cf0 \strokec4 ],\cb1 \
+\cb3       transcript: parsedReport.transcript || \cf6 \strokec6 '\uc0\u1058 \u1088 \u1072 \u1085 \u1089 \u1082 \u1088 \u1080 \u1073 \u1091 \u1074 \u1072 \u1085 \u1085 \u1103  \u1074 \u1110 \u1076 \u1089 \u1091 \u1090 \u1085 \u1108 ...'\cf0 \strokec4 ,\cb1 \
+\cb3       complianceScore: calculatedComplianceScore,\cb1 \
+\cb3       stepsAnalysis: validatedSteps,\cb1 \
+\cb3       upsellAttempted: \cf5 \strokec5 false\cf0 \strokec4 ,\cb1 \
+\cb3       upsellSucceeded: \cf5 \strokec5 false\cf0 \strokec4 ,\cb1 \
+\cb3       detectedUpsells: [],\cb1 \
+\cb3       technicalStateDiscussed: \cf5 \strokec5 false\cf0 \strokec4 ,\cb1 \
+\cb3       technicalStateClean: \cf5 \strokec5 false\cf0 \strokec4 ,\cb1 \
+\cb3       receivablesDiscussed: \cf5 \strokec5 false\cf0 \strokec4 ,\cb1 \
+\cb3       receivablesRecoveredAmount: \cf8 \strokec8 0\cf0 \strokec4 ,\cb1 \
+\cb3       critiqueText: parsedReport.critiqueText || \cf6 \strokec6 '\uc0\u1040 \u1085 \u1072 \u1083 \u1110 \u1079  \u1079 \u1072 \u1074 \u1077 \u1088 \u1096 \u1077 \u1085 \u1086 .'\cf0 \strokec4 ,\cb1 \
+\cb3       supervisorActions: (parsedReport.supervisorActions || []).slice(\cf8 \strokec8 0\cf0 \strokec4 , \cf8 \strokec8 3\cf0 \strokec4 )\cb1 \
+\cb3     \};\cb1 \
+\
+\cb3     audits.unshift(finalReport);\cb1 \
+\cb3     \cf5 \strokec5 await\cf0 \strokec4  saveToDisk();\cb1 \
+\
+\cb3     res.json(\{ success: \cf5 \strokec5 true\cf0 \strokec4 , report: finalReport \});\cb1 \
+\cb3   \} \cf5 \strokec5 catch\cf0 \strokec4  (error: \cf5 \strokec5 any\cf0 \strokec4 ) \{\cb1 \
+\cb3     console.error(\cf6 \strokec6 'API Error:'\cf0 \strokec4 , error);\cb1 \
+\cb3     res.status(\cf8 \strokec8 500\cf0 \strokec4 ).json(\{ error: \cf6 \strokec6 '\uc0\u1055 \u1086 \u1084 \u1080 \u1083 \u1082 \u1072  \u1064 \u1030 : '\cf0 \strokec4  + (error.message || error) \});\cb1 \
+\cb3   \}\cb1 \
+\cb3 \});\cb1 \
+\
+\pard\pardeftab720\partightenfactor0
+\cf5 \cb3 \strokec5 async\cf0 \strokec4  \cf5 \strokec5 function\cf0 \strokec4  bootstrap() \{\cb1 \
+\pard\pardeftab720\partightenfactor0
+\cf0 \cb3   \cf5 \strokec5 await\cf0 \strokec4  loadFromDisk();\cb1 \
+\cb3   \cf5 \strokec5 if\cf0 \strokec4  (process.env.\cf7 \strokec7 NODE_ENV\cf0 \strokec4  !== \cf6 \strokec6 'production'\cf0 \strokec4 ) \{\cb1 \
+\cb3     \cf5 \strokec5 const\cf0 \strokec4  \{ createServer: createViteServer \} = \cf5 \strokec5 await\cf0 \strokec4  \cf5 \strokec5 import\cf0 \strokec4 (\cf6 \strokec6 'vite'\cf0 \strokec4 );\cb1 \
+\cb3     \cf5 \strokec5 const\cf0 \strokec4  vite = \cf5 \strokec5 await\cf0 \strokec4  createViteServer(\{ server: \{ middlewareMode: \cf5 \strokec5 true\cf0 \strokec4  \}, appType: \cf6 \strokec6 'custom'\cf0 \strokec4  \});\cb1 \
+\cb3     app.use(vite.middlewares);\cb1 \
+\cb3     app.use(\cf6 \strokec6 '*'\cf0 \strokec4 , \cf5 \strokec5 async\cf0 \strokec4  (req, res, next) => \{\cb1 \
+\cb3       \cf5 \strokec5 try\cf0 \strokec4  \{\cb1 \
+\cb3         \cf5 \strokec5 let\cf0 \strokec4  template = \cf5 \strokec5 await\cf0 \strokec4  fs.readFile(path.resolve(workspaceRoot, \cf6 \strokec6 'index.html'\cf0 \strokec4 ), \cf6 \strokec6 'utf-8'\cf0 \strokec4 );\cb1 \
+\cb3         template = \cf5 \strokec5 await\cf0 \strokec4  vite.transformIndexHtml(req.originalUrl, template);\cb1 \
+\cb3         res.status(\cf8 \strokec8 200\cf0 \strokec4 ).\cf5 \strokec5 set\cf0 \strokec4 (\{ \cf6 \strokec6 'Content-Type'\cf0 \strokec4 : \cf6 \strokec6 'text/html'\cf0 \strokec4  \}).end(template);\cb1 \
+\cb3       \} \cf5 \strokec5 catch\cf0 \strokec4  (e) \{ vite.ssrFixStacktrace(e \cf5 \strokec5 as\cf0 \strokec4  \cf7 \strokec7 Error\cf0 \strokec4 ); next(e); \}\cb1 \
+\cb3     \});\cb1 \
+\cb3   \} \cf5 \strokec5 else\cf0 \strokec4  \{\cb1 \
+\cb3     app.use(express.\cf5 \strokec5 static\cf0 \strokec4 (path.resolve(workspaceRoot, \cf6 \strokec6 'dist'\cf0 \strokec4 )));\cb1 \
+\cb3     app.\cf5 \strokec5 get\cf0 \strokec4 (\cf6 \strokec6 '*'\cf0 \strokec4 , (req, res) => \{\cb1 \
+\cb3       res.sendFile(path.resolve(workspaceRoot, \cf6 \strokec6 'dist'\cf0 \strokec4 , \cf6 \strokec6 'index.html'\cf0 \strokec4 ));\cb1 \
+\cb3     \});\cb1 \
+\cb3   \}\cb1 \
+\cb3   app.listen(\cf7 \strokec7 Number\cf0 \strokec4 (\cf7 \strokec7 PORT\cf0 \strokec4 ), \cf6 \strokec6 '0.0.0.0'\cf0 \strokec4 , () => console.log(\cf6 \strokec6 `App running on port \cf0 \strokec4 $\{\cf7 \strokec7 PORT\cf0 \strokec4 \}\cf6 \strokec6 `\cf0 \strokec4 ));\cb1 \
+\cb3 \}\cb1 \
+\
+\cb3 bootstrap().\cf5 \strokec5 catch\cf0 \strokec4 (console.error);\cb1 \
+}
