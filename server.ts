@@ -5,7 +5,6 @@
 
 import express from 'express';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import fs from 'fs/promises';
 import dotenv from 'dotenv';
 import { GoogleGenAI, Type } from '@google/genai';
@@ -81,8 +80,7 @@ app.post('/api/documents', async (req, res) => {
     title: title || 'Новий регламент',
     category: category || 'general',
     isActive: true,
-    content: content || '',
-    createdAt: new Date().toISOString()
+    content: content || ''
   };
   documents.push(newDoc);
   await saveToDisk();
@@ -135,11 +133,11 @@ app.post('/api/documents/gap-analysis', async (req, res) => {
     1. Знайди 1 спільну проблему (де агенти найчастіше плутаються або чого не вистачає в документах).
     2. Запропонуй створити новий регламент або оновити існуючий, щоб вирішити цю проблему.
     
-    Поверни СТРОГО у JSON форматі (без маркдауну, без блоків форматування): 
+    Поверни СТРОГО у JSON форматі: 
     {"gap": "детальний опис знайденої проблеми", "recommendation": "конкретна назва та суть нового регламенту"}`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       contents: [{ text: prompt }],
       config: {
         responseMimeType: 'application/json',
@@ -178,6 +176,39 @@ app.post('/api/audits/delete', async (req, res) => {
   res.json({ success: true, id: req.body.id });
 });
 
+app.post('/api/audits/:id/chat', async (req, res) => {
+  const { question } = req.body;
+  const audit = audits.find(a => a.id === req.params.id);
+  const apiKey = process.env.GEMINI_API_KEY || '';
+
+  if (!audit) return res.status(404).json({ success: false, error: 'Аудит не знайдено' });
+
+  try {
+    const ai = new GoogleGenAI({ apiKey: apiKey, httpOptions: { headers: { 'User-Agent': 'aistudio-build' } } });
+    
+    const prompt = `Ти ШІ-Супервайзер компанії "Anima Volitiva". 
+Нижче наведено конспект аудіозапису зустрічі з торговим агентом (${audit.agentName}) на точці "${audit.pointName}".
+
+КОНСПЕКТ РОЗМОВИ:
+${audit.transcript}
+
+ЗАПИТАННЯ СУПЕРВАЙЗЕРА:
+"${question}"
+
+Дай чітку, конкретну та лаконічну відповідь українською мовою на основі цієї розмови.`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-1.5-flash',
+      contents: [{ text: prompt }]
+    });
+
+    res.json({ success: true, answer: response.text });
+  } catch (e: any) {
+    console.error('Chat error:', e);
+    res.status(500).json({ success: false, error: e.message || 'Помилка ШІ' });
+  }
+});
+
 app.post('/api/audits/analyze', async (req, res) => {
   const { agentId, pointName, transcriptText, audioBase64, audioMimeType } = req.body;
   const agent = agents.find(a => a.id === agentId);
@@ -214,7 +245,7 @@ ${activeDocs}
 Поверни результат СТРОГО у JSON.`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       contents: parts,
       config: {
         systemInstruction: systemPrompt,
@@ -254,7 +285,6 @@ ${activeDocs}
     }
     const parsedReport = JSON.parse(rawText);
 
-    // Розрахунок балів
     let totalScore = 0;
     let maxScore = 0;
 
