@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Cache directories
+__pycache__/
+.cache/
+
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+
+# Allow committing the template file
+!.env.example
+
+# Build and distribution files
+dist/
+build/
+coverage/
+
+# OS-specific files
+.DS_Store
+*.log
