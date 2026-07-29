@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import express from 'express';
 import path from 'path';
 import fs from 'fs/promises';
@@ -123,7 +118,7 @@ app.post('/api/documents/gap-analysis', async (req, res) => {
 
     const prompt = `Ти Головний Бізнес-Аналітик компанії. Твоє завдання: порівняти системні помилки агентів з наявною базою знань та знайти "сліпі зони".
     
-    БАЗА ЗНАНЬ (існуючі документи):
+    БАЗА ЗНАНЬ (існучі документы):
     ${activeDocs || 'Порожньо'}
     
     ПОМИЛКИ З ОСТАННІХ АУДИТІВ:
@@ -137,7 +132,7 @@ app.post('/api/documents/gap-analysis', async (req, res) => {
     {"gap": "детальний опис знайденої проблеми", "recommendation": "конкретна назва та суть нового регламенту"}`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.0-flash',
       contents: [{ text: prompt }],
       config: {
         responseMimeType: 'application/json',
@@ -198,7 +193,7 @@ ${audit.transcript}
 Дай чітку, конкретну та лаконічну відповідь українською мовою на основі цієї розмови.`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.0-flash',
       contents: [{ text: prompt }]
     });
 
@@ -245,7 +240,7 @@ ${activeDocs}
 Поверни результат СТРОГО у JSON.`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.0-flash',
       contents: parts,
       config: {
         systemInstruction: systemPrompt,
